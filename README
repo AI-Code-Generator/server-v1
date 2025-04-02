@@ -2,6 +2,6 @@ docker run command
 
 docker run -d -p 8000:8000 -e GEMINI_API_KEY=api_key_here <IMAGE-ID>
 
-curl -X POST "http://127.0.0.1:8000/ask-ai" -H "Content-Type: application/json" -d '{\"query\": \"What is Python?\"}'
+curl -X POST "http://<IP>:8000/ask-ai" -H "Content-Type: application/json" -d '{\"query\": \"<QUESTION>\"}'
 
-curl -X POST "http://127.0.0.1:8000/ask-ai" -H "Content-Type: application/json" -d "{\"query\": \"What is Python?\"}"
+curl -X POST "http://<IP>:8000/ask-ai" -H "Content-Type: application/json" -d "{\"query\": \"<QUESTION>\"}"
