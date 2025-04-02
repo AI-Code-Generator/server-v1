@@ -3,7 +3,6 @@ import sys
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Load API key
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -38,6 +37,6 @@ chat_session = model.start_chat(history=[])
 if len(sys.argv) > 1:
     user_input = sys.argv[1]
     response = chat_session.send_message(user_input)
-    print(response.text)  # Print response for FastAPI to capture
+    print(response.text)
 else:
     print("Error: No input provided.")
