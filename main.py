@@ -1,22 +1,27 @@
-import os
-from pyexpat import model
-import sys
 from fastapi import FastAPI
 from pydantic import BaseModel
 import subprocess
+import pymongo
 import json
-from pymongo import MongoClient
 
 app = FastAPI()
 
 class InputData(BaseModel):
-    user_id: str
     query: str
+    user_ID: str
 
-# MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-client = MongoClient("mongodb+srv://trmnteam:tBp54siAioeGkVpb@cluster0.68spx5t.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db = client["chat_db"]
-history_collection = db["chat_history"]
+try:
+    client = pymongo.MongoClient("mongodb+srv://trmnteam:tBp54siAioeGkVpb@cluster0.68spx5t.mongodb.net/", serverSelectionTimeoutMS=3000)
+    # This will throw an exception if not connected
+    client.admin.command('ping')
+    print("MongoDB connection: SUCCESS")
+except Exception as e:
+    print(f"MongoDB connection: FAILED ({e})")
+
+# Connect to MongoDB (adjust the connection string as needed)
+client = pymongo.MongoClient("mongodb+srv://trmnteam:tBp54siAioeGkVpb@cluster0.68spx5t.mongodb.net/")
+db = client["CODE_GENERATOR"]
+users_collection = db["users"]
 
 @app.get("/")
 def read_root():
@@ -41,56 +46,37 @@ def run_script():
 @app.post("/ask-ai")
 def ask_ai(data: InputData):
     try:
+        # Retrieve the latest document for the user with user_id data.user_ID
+        docs = list(users_collection.find({"user_id": data.user_ID}))
+
+        # Build history from all retrieved documents; if none found, use an empty list
+        if docs:
+            history = []
+            for doc in docs:
+                history.append({
+                    "user_prompt": doc.get("user_promt", ""),
+                    "AI": doc.get("AI", "")
+                })
+            print("History loaded from MongoDB:", history)
+        else:
+            history = []
+        payload = json.dumps({"query": data.query, "history": history})
         result = subprocess.run(
-            ['python', 'chat.py', data.user_id, data.query],
+            ['python', 'chat.py', payload],
             capture_output=True,
             text=True
         )
-        response_text = result.stdout.strip()
-        error_text = result.stderr.strip()
-
-        # Load existing history
-        history = load_history(data.user_id)
-
-        # Append the user's input and the AI's response to the history
-        history.append({"role": "user", "parts": [data.query]})
-        history.append({"role": "model", "parts": [response_text]})
-
-        # Save the updated history
-        save_history(data.user_id, history)
-
-        return {"response": response_text, "error": error_text}
+        if result.stdout.strip():
+            users_collection.insert_one({
+            "user_id": data.user_ID,
+            "user_promt": data.query,
+            "AI": result.stdout.strip()
+            })
+        return {"response": result.stdout.strip(), "error": result.stderr.strip()}
+    
     except Exception as e:
         return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-# db connection and other configurations
-
-def load_history(user_id):
-    doc = history_collection.find_one({"user_id": user_id})
-    if doc and "history" in doc:
-        return doc["history"]
-    return []
-
-def save_history(user_id, history):
-    history_collection.update_one(
-        {"user_id": user_id},
-        {"$set": {"history": history}},
-        upsert=True
-    )
-
-if len(sys.argv) > 2:
-    user_id = sys.argv[1]
-    user_input = sys.argv[2]
-    history = load_history(user_id)
-    chat_session = model.start_chat(history=history)
-    response = chat_session.send_message(user_input)
-    history.append({"role": "user", "parts": [user_input]})
-    history.append({"role": "model", "parts": [response.text]})
-    save_history(user_id, history)
-    print(response.text)
-else:
-    print("Error: No user_id or input provided.")
