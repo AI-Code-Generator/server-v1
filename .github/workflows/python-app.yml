@@ -37,7 +37,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Build Docker image
-      run: docker build -t your-dockerhub-username/your-repo-name:latest .
+      run: docker build -t trmnteam/server:${{ github.run_number }} .
 
     - name: Push Docker image
-      run: docker push your-dockerhub-username/your-repo-name:latest
+      run: docker push trmnteam/server:${{ github.run_number }}
