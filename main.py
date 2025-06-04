@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import subprocess
 import json
+import uvicorn
 from mongodb import users_collection
 
 app = FastAPI()
@@ -60,5 +61,4 @@ def ask_ai(data: InputData):
         return {"error": str(e)}
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
