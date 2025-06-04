@@ -1,27 +1,14 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import subprocess
-import pymongo
 import json
+from mongodb import users_collection
 
 app = FastAPI()
 
 class InputData(BaseModel):
     query: str
     user_ID: str
-
-try:
-    client = pymongo.MongoClient("mongodb+srv://trmnteam:tBp54siAioeGkVpb@cluster0.68spx5t.mongodb.net/", serverSelectionTimeoutMS=3000)
-    # This will throw an exception if not connected
-    client.admin.command('ping')
-    print("MongoDB connection: SUCCESS")
-except Exception as e:
-    print(f"MongoDB connection: FAILED ({e})")
-
-# Connect to MongoDB (adjust the connection string as needed)
-client = pymongo.MongoClient("mongodb+srv://trmnteam:tBp54siAioeGkVpb@cluster0.68spx5t.mongodb.net/")
-db = client["CODE_GENERATOR"]
-users_collection = db["users"]
 
 @app.get("/")
 def read_root():
@@ -30,7 +17,6 @@ def read_root():
 @app.get("/run-script")
 def run_script():
     try:
-        # Run the chat.py script
         result = subprocess.run(
             ['python', 'chat.py'],
             capture_output=True,
@@ -46,10 +32,7 @@ def run_script():
 @app.post("/ask-ai")
 def ask_ai(data: InputData):
     try:
-        # Retrieve the latest document for the user with user_id data.user_ID
         docs = list(users_collection.find({"user_id": data.user_ID}))
-
-        # Build history from all retrieved documents; if none found, use an empty list
         if docs:
             history = []
             for doc in docs:
@@ -68,12 +51,11 @@ def ask_ai(data: InputData):
         )
         if result.stdout.strip():
             users_collection.insert_one({
-            "user_id": data.user_ID,
-            "user_promt": data.query,
-            "AI": result.stdout.strip()
+                "user_id": data.user_ID,
+                "user_promt": data.query,
+                "AI": result.stdout.strip()
             })
         return {"response": result.stdout.strip(), "error": result.stderr.strip()}
-    
     except Exception as e:
         return {"error": str(e)}
 
