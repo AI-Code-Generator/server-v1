@@ -4,12 +4,14 @@ import subprocess
 import json
 import uvicorn
 from mongodb import users_collection
+from typing import Optional, List
 
 app = FastAPI()
 
 class InputData(BaseModel):
     query: str
     user_ID: str
+    context: Optional[List[str]] = None
 
 @app.get("/")
 def read_root():
@@ -44,7 +46,13 @@ def ask_ai(data: InputData):
             print("History loaded from MongoDB:", history)
         else:
             history = []
-        payload = json.dumps({"query": data.query, "history": history})
+
+        if data.context:
+            joined_context = "\n\n".join(data.context)
+            payload = json.dumps({"query": data.query, "context": joined_context, "history": history})
+        else:
+           payload = json.dumps({"query": data.query, "history": history})
+        
         result = subprocess.run(
             ['python', 'chat.py', payload],
             capture_output=True,
