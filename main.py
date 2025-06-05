@@ -51,7 +51,7 @@ def ask_ai(data: InputData):
             joined_context = "\n\n".join(data.context)
             payload = json.dumps({"query": data.query, "context": joined_context, "history": history})
         else:
-           payload = json.dumps({"query": data.query, "history": history})
+            payload = json.dumps({"query": data.query, "history": history})
         
         result = subprocess.run(
             ['python', 'chat.py', payload],
