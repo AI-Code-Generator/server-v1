@@ -48,7 +48,10 @@ def ask_ai(data: InputData):
             history = []
 
         if data.context:
-            joined_context = "\n\n".join(data.context)
+            if isinstance(data.context, list):
+                joined_context = "\n\n".join(data.context)
+            else:
+                joined_context = str(data.context)
             payload = json.dumps({"query": data.query, "context": joined_context, "history": history})
         else:
             payload = json.dumps({"query": data.query, "history": history})
