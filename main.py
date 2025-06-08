@@ -35,15 +35,15 @@ def run_script():
 @app.post("/ask-ai")
 def ask_ai(data: InputData):
     try:
-        docs = list(users_collection.find({"user_id": data.user_ID}))
+        docs = list(users_collection.find({"user_id": data.user_ID}).sort("_id", -1).limit(5))
         if docs:
             history = []
-            for doc in docs:
+            for doc in docs[::-1]:
                 history.append({
                     "user_prompt": doc.get("user_promt", ""),
                     "AI": doc.get("AI", "")
                 })
-            print("History loaded from MongoDB:", history)
+            print("Last five history loaded from MongoDB:", history)
         else:
             history = []
 
