@@ -1,6 +1,6 @@
 docker run command
 
-docker run -d -p 8000:8000 -e GEMINI_API_KEY=api_key_here <IMAGE-ID>
+docker run -d -p 8000:8000 -e GEMINI_API_KEY=api_key_here -e MONGO_URI=mongodb_url <IMAGE-ID>
 
 curl -X POST "http://<IP>:8000/ask-ai" -H "Content-Type: application/json" -d '{\"query\": \"<QUESTION>\"}'
 
