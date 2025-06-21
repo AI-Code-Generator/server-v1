@@ -8,6 +8,7 @@ from typing import Optional, List
 from rank_bm25 import BM25Okapi
 import re
 from string import punctuation
+from prompts.query_enhancement_instruction import QUERY_ENHANCEMENT_SYSTEM_INSTRUCTION
 
 app = FastAPI()
 
@@ -15,6 +16,29 @@ class InputData(BaseModel):
     query: str
     user_ID: str
     context: Optional[List[str]] = None
+
+class CurrentFileContext(BaseModel):
+    filename: str
+    functions: List[str]
+    classes: List[str]
+    interfaces: List[str]
+
+class ContextData(BaseModel):
+    filenames: List[str]
+    functionNames: List[str]
+    classNames: List[str]
+    interfaceNames: List[str]
+    variableNames: List[str]
+    imports: List[str]
+    exports: List[str]
+    currentFileContext: CurrentFileContext
+    relevantSymbols: List[str]
+    language: str
+    selectedCode: str
+
+class InputForEnhanceQuery(BaseModel):
+    question: str
+    context: Optional[ContextData] = None
 
 # Define a simple English stopword list
 STOPWORDS = set([
@@ -116,6 +140,29 @@ def ask_ai(data: InputData):
                 "AI": result.stdout.strip()
             })
         return {"response": result.stdout.strip(), "error": result.stderr.strip()}
+    except Exception as e:
+        return {"error": str(e)}
+    
+@app.post("/enhance-query")
+def enhance_query(data: InputForEnhanceQuery):
+    try:
+        payload = {
+            "instruction": QUERY_ENHANCEMENT_SYSTEM_INSTRUCTION,
+            "question": data.question,
+            "context": data.context.dict() if data.context else None
+        }
+
+        result = subprocess.run(
+            ['python', 'chat.py', json.dumps(payload)],
+            capture_output=True,
+            text=True
+        )
+
+        queryExtractJson = result.stdout.strip()
+        print(queryExtractJson)
+        queryExtract = json.loads(queryExtractJson)
+
+        return {"enhancedQuery": queryExtract.get("enhancedQuery", data.question), "queryError": queryExtract.get("error", None), "error": result.stderr.strip()}
     except Exception as e:
         return {"error": str(e)}
 
