@@ -159,7 +159,15 @@ def enhance_query(data: InputForEnhanceQuery):
         )
 
         queryExtractJson = result.stdout.strip()
-        print(queryExtractJson)
+
+        if queryExtractJson.startswith('```'):
+            lines = queryExtractJson.split('\n')
+            if lines[0].startswith('```'):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == '```':
+                lines = lines[:-1]
+            queryExtractJson = '\n'.join(lines).strip()
+
         queryExtract = json.loads(queryExtractJson)
 
         return {"enhancedQuery": queryExtract.get("enhancedQuery", data.question), "queryError": queryExtract.get("error", None), "error": result.stderr.strip()}
