@@ -3,4 +3,6 @@ uvicorn
 python-dotenv
 google-generativeai
 pymongo
-rank_bm25
+sentence-transformers
+scikit-learn
+tf-keras
