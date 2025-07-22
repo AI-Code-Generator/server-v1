@@ -27,7 +27,7 @@ model = genai.GenerativeModel(
     model_name="gemini-2.5-flash-preview-05-20",
     safety_settings=safety_settings,
     generation_config=generation_config,
-    system_instruction="You are an expert at coding. You are a coding assistant. You are a large language model trained by Google.",
+    system_instruction="You are an expert at coding. You are a coding assistant. You are a large language model trained by Google. Only give the specific answer to the user's question. Do not give any other information.",
 )
 
 # Start a new chat session
