@@ -83,13 +83,29 @@ def ask_ai(data: InputData):
             capture_output=True,
             text=True
         )
-        if result.stdout.strip():
-            users_collection.insert_one({
+        
+        ai_response = result.stdout.strip()
+        
+        # Check if this exact conversation already exists before inserting
+        if ai_response:
+            existing_doc = users_collection.find_one({
                 "user_id": data.user_ID,
                 "user_promt": data.query,
-                "AI": result.stdout.strip()
+                "AI": ai_response
             })
-        return {"response": result.stdout.strip(), "error": result.stderr.strip()}
+            
+            # Only insert if this exact conversation doesn't exist
+            if not existing_doc:
+                users_collection.insert_one({
+                    "user_id": data.user_ID,
+                    "user_promt": data.query,
+                    "AI": ai_response
+                })
+                print(f"New conversation stored for user {data.user_ID}")
+            else:
+                print(f"Duplicate conversation found for user {data.user_ID}, skipping insert")
+        
+        return {"response": ai_response, "error": result.stderr.strip()}
     except Exception as e:
         return {"error": str(e)}
 
