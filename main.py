@@ -83,13 +83,33 @@ def ask_ai(data: InputData):
             capture_output=True,
             text=True
         )
-        if result.stdout.strip():
+        
+        ai_response = result.stdout.strip()
+        
+        # Check if this conversation already exists and update with latest data
+        if ai_response:
+            existing_doc = users_collection.find_one({
+                "user_id": data.user_ID,
+                "user_promt": data.query
+            })
+            
+            if existing_doc:
+                # Delete ALL previous documents with the same query for this user
+                delete_result = users_collection.delete_many({
+                    "user_id": data.user_ID,
+                    "user_promt": data.query
+                })
+                print(f"Deleted {delete_result.deleted_count} previous conversations for user {data.user_ID}")
+            
+            # Insert the new conversation (whether it was a duplicate or not)
             users_collection.insert_one({
                 "user_id": data.user_ID,
                 "user_promt": data.query,
-                "AI": result.stdout.strip()
+                "AI": ai_response
             })
-        return {"response": result.stdout.strip(), "error": result.stderr.strip()}
+            print(f"Conversation stored for user {data.user_ID}")
+        
+        return {"response": ai_response, "error": result.stderr.strip()}
     except Exception as e:
         return {"error": str(e)}
 
