@@ -148,6 +148,10 @@ def get_user_stats(user_id: str):
 @app.post("/ask-ai")
 def ask_ai(data: InputData):
     try:
+        # Time calculate
+        import time
+        start_time = time.time()
+
         # 1. Search Pinecone for relevant history in user's namespace
         vector_results = search_user_conversations(data.user_ID, data.query, top_k=10)
         
@@ -199,7 +203,15 @@ def ask_ai(data: InputData):
             else:
                 print(f"Duplicate conversation found for user {data.user_ID}, skipping store")
         
-        return {"response": ai_response, "error": result.stderr.strip()}
+        
+        end_time = time.time()
+        response_time = end_time - start_time
+        
+        return {
+            "response": result.stdout.strip(), 
+            "error": result.stderr.strip(),
+            "response_time_seconds": round(response_time, 3)
+        }
     except Exception as e:
         return {"error": str(e)}
 
