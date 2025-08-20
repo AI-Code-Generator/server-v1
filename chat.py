@@ -24,7 +24,7 @@ safety_settings = [
 
 # Initialize model
 model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash-preview-05-20",
+    model_name="gemini-2.5-pro",
     safety_settings=safety_settings,
     generation_config=generation_config,
     system_instruction="You are an expert at coding. You are a coding assistant. You are a large language model trained by Google.",
